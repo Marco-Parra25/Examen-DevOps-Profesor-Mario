@@ -30,8 +30,8 @@ jobs:
 
       - name: Tag Docker Image
         run: |
-          docker tag frontend:latest 536342473074.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+          docker tag frontend:latest 730335429934.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
 
       - name: Push Docker Image
         run: |
-          docker push 536342473074.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+          docker push 730335429934.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
