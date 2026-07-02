@@ -1,42 +1,78 @@
-name: CI/CD Tienda Perritos - Backend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: default
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: 730335429934.dkr.ecr.us-east-1.amazonaws.com/backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3001
+        
+        # --- CONFIGURACIÓN DE PROBES (Auto Healing / Criterio Evaluación) ---
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3001
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 5
 
-on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - "backend/**"
+        # --- RECURSOS (Requisito para métricas y escalabilidad) ---
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
 
-jobs:
-  build-push-deploy-backend:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout código
-      uses: actions/checkout@v3
-
-    - name: Configurar credenciales AWS
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-        aws-region: ${{ secrets.AWS_REGION }}
-
-    - name: Login en Amazon ECR (runner)
-      uses: aws-actions/amazon-ecr-login@v1
-
-    - name: Build imagen Backend y push a ECR
-      run: |
-        cd backend
-        docker build -t tienda-backend .
-        docker tag tienda-backend:latest ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
-        docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
-
-    - name: Configurar Kubeconfig para EKS
-      run: |
-        aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
-
-    - name: Desplegar en EKS
-      run: |
-        kubectl apply -f k8s/backend-deployment.yaml
-        kubectl rollout restart deployment/backend-deployment
+        # --- VARIABLES DE ENTORNO SEGURAS (Criterio Secrets) ---
+        env:
+        - name: PORT
+          value: "3001"
+        - name: DB_HOST
+          value: "db-service"
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tienda-db-secrets
+              key: mysql-root-password
+        - name: DB_NAME
+          value: "tienda_perritos"
+        - name: DB_PORT
+          value: "3306"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 3001
