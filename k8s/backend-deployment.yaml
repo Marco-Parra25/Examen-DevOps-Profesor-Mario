@@ -17,25 +17,26 @@ spec:
     spec:
       containers:
       - name: backend
-        # Reemplazar con la URL real de tu repositorio ECR, por ejemplo:
-        # 123456789012.dkr.ecr.us-east-1.amazonaws.com/tienda-backend:latest
         image: 730335429934.dkr.ecr.us-east-1.amazonaws.com/backend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3001
-        env:
-        - name: PORT
-          value: "3001"
-        - name: DB_HOST
-          value: "db-service" # Cambiar por la IP/DNS de tu DB (ej. "db-service" si corre en k8s, o IP privada si es EC2/RDS)
-        - name: DB_USER
-          value: "root"
-        - name: DB_PASSWORD
-          value: "admin123"
-        - name: DB_NAME
-          value: "tienda_perritos"
-        - name: DB_PORT
-          value: "3306"
+        
+        # --- CONFIGURACIÓN DE PROBES (Auto Healing / Criterio Evaluación) ---
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3001
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+        # --- RECURSOS (Requisito para métricas y escalabilidad) ---
         resources:
           limits:
             cpu: "500m"
@@ -43,6 +44,24 @@ spec:
           requests:
             cpu: "250m"
             memory: "256Mi"
+
+        # --- VARIABLES DE ENTORNO SEGURAS (Criterio Secrets) ---
+        env:
+        - name: PORT
+          value: "3001"
+        - name: DB_HOST
+          value: "db-service"
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tienda-db-secrets
+              key: mysql-root-password
+        - name: DB_NAME
+          value: "tienda_perritos"
+        - name: DB_PORT
+          value: "3306"
 ---
 apiVersion: v1
 kind: Service
