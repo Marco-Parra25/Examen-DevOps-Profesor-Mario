@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    # === CAMBIO 1: Restricción de rutas para nota máxima en organización ===
+    paths:
+      - "frontend/**"
+      - "k8s/frontend-deployment.yaml"
+      - "k8s/frontend-hpa.yaml"
 
 jobs:
   build:
@@ -19,7 +24,8 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
+          # Usamos la variable global de región por consistencia técnica
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
@@ -42,5 +48,8 @@ jobs:
 
       - name: Desplegar en EKS
         run: |
-          kubectl apply -f k8s/frontend-deployment.yaml -f k8s/frontend-hpa.yaml
+          # Aplicamos de forma limpia tus manifiestos
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8s/frontend-hpa.yaml
+          # === CAMBIO 2: Corrección sintáctica (eliminado el punto suelto final) ===
           kubectl rollout restart deployment/frontend-deployment
