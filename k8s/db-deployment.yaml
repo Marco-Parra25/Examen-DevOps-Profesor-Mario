@@ -17,23 +17,12 @@ spec:
     spec:
       containers:
       - name: mysql
-        # Reemplazar con la URL real de tu repositorio ECR para la DB, por ejemplo:
-        # 123456789012.dkr.ecr.us-east-1.amazonaws.com/tienda-db:latest
         image: 730335429934.dkr.ecr.us-east-1.amazonaws.com/db:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3306
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: "admin123"
-        - name: MYSQL_DATABASE
-          value: "tienda_perritos"
-        - name: MYSQL_USER
-          value: "alumno"
-        - name: MYSQL_PASSWORD
-          value: "alumno123"
-        # Nota: En un entorno productivo real se deben usar PVC (Persistent Volume Claims) para evitar pérdida de datos.
-        # Al usar EKS Auto Mode, se provisionan volúmenes EBS GP3 de forma automática si defines un PVC.
+        
+        # --- RECURSOS (Obligatorio para que no arroje inconsistencias de clúster) ---
         resources:
           limits:
             cpu: "500m"
@@ -41,6 +30,23 @@ spec:
           requests:
             cpu: "250m"
             memory: "256Mi"
+
+        # --- VARIABLES DE ENTORNO SEGURAS CON KUBERNETES SECRETS ---
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tienda-db-secrets
+              key: mysql-root-password
+        - name: MYSQL_DATABASE
+          value: "tienda_perritos"
+        - name: MYSQL_USER
+          value: "alumno"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tienda-db-secrets
+              key: mysql-password
 ---
 apiVersion: v1
 kind: Service
