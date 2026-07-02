@@ -19,7 +19,7 @@ spec:
       - name: backend
         # Reemplazar con la URL real de tu repositorio ECR, por ejemplo:
         # 123456789012.dkr.ecr.us-east-1.amazonaws.com/tienda-backend:latest
-        image: backend:latest
+        image: 730335429934.dkr.ecr.us-east-1.amazonaws.com/backend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3001

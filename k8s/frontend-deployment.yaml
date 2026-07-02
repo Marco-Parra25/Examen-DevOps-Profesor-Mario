@@ -19,7 +19,7 @@ spec:
       - name: frontend
         # Reemplazar con la URL real de tu repositorio ECR, por ejemplo:
         # 123456789012.dkr.ecr.us-east-1.amazonaws.com/tienda-frontend:latest
-        image: frontend:latest
+        image: 730335429934.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
