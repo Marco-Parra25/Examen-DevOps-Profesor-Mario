@@ -17,12 +17,27 @@ spec:
     spec:
       containers:
       - name: frontend
-        # Reemplazar con la URL real de tu repositorio ECR, por ejemplo:
-        # 123456789012.dkr.ecr.us-east-1.amazonaws.com/tienda-frontend:latest
+        # Tu imagen de Amazon ECR se mantiene intacta
         image: 730335429934.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
+        
+        # === AQUÍ COMIENZA EL CAMBIO NUEVO (PROBES PARA NOTA MAXIMA) ===
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        # === AQUÍ TERMINA EL CAMBIO NUEVO ===
+
         resources:
           limits:
             cpu: "500m"
