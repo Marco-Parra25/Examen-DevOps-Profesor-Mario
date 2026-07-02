@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-deployment
+  namespace: default
+  labels:
+    app: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: mysql
+        # Reemplazar con la URL real de tu repositorio ECR para la DB, por ejemplo:
+        # 123456789012.dkr.ecr.us-east-1.amazonaws.com/tienda-db:latest
+        image: db:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "admin123"
+        - name: MYSQL_DATABASE
+          value: "tienda_perritos"
+        - name: MYSQL_USER
+          value: "alumno"
+        - name: MYSQL_PASSWORD
+          value: "alumno123"
+        # Nota: En un entorno productivo real se deben usar PVC (Persistent Volume Claims) para evitar pérdida de datos.
+        # Al usar EKS Auto Mode, se provisionan volúmenes EBS GP3 de forma automática si defines un PVC.
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-service
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: db
+  ports:
+  - name: mysql
+    port: 3306
+    targetPort: 3306

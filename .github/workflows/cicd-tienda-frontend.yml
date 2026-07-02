@@ -30,8 +30,17 @@ jobs:
 
       - name: Tag Docker Image
         run: |
-          docker tag frontend:latest 730335429934.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+          docker tag frontend:latest ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest
 
       - name: Push Docker Image
         run: |
-          docker push 730335429934.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+          docker push ${{ secrets.ECR_REPO_URL_FRONTEND }}:latest
+
+      - name: Configurar Kubeconfig para EKS
+        run: |
+          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+
+      - name: Desplegar en EKS
+        run: |
+          kubectl apply -f k8s/frontend-deployment.yaml -f k8s/frontend-hpa.yaml
+          kubectl rollout restart deployment/frontend-deployment
