@@ -1,0 +1,57 @@
+# Orquestación local del entorno de desarrollo (Frontend + Backend + Base de Datos).
+# Uso:  docker compose up --build
+#   Frontend:  http://localhost:8080
+#   Backend:   http://localhost:3001/api/health
+#   MySQL:     localhost:3307
+services:
+  db:
+    build: ./db
+    container_name: tienda-db
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: tienda_perritos
+    ports:
+      - "3307:3306"          # 3307 en el host para no chocar con un MySQL local
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-padmin123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tienda-net
+
+  backend:
+    build: ./backend
+    # Nombre de servicio 'backend-service' para que el proxy de nginx funcione
+    # igual en local y en Kubernetes.
+    container_name: backend-service
+    environment:
+      PORT: "3001"
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: admin123
+      DB_NAME: tienda_perritos
+      DB_PORT: "3306"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    networks:
+      tienda-net:
+        aliases:
+          - backend-service
+
+  frontend:
+    build: ./frontend
+    container_name: tienda-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    networks:
+      - tienda-net
+
+networks:
+  tienda-net:
+    driver: bridge

@@ -16,6 +16,18 @@ jobs:
     - name: Checkout código
       uses: actions/checkout@v3
 
+    # --- ETAPA DE PRUEBAS: si fallan, el pipeline se detiene y no despliega ---
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Instalar dependencias y ejecutar pruebas
+      run: |
+        cd backend
+        npm install
+        npm test
+
     - name: Configurar credenciales AWS
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -27,12 +39,15 @@ jobs:
     - name: Login en Amazon ECR (runner)
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build imagen Backend y push a ECR
+    - name: Build imagen Backend y push a ECR (con tag de versión = commit)
       run: |
         cd backend
         docker build -t tienda-backend .
+        # Etiquetamos con 'latest' y con el SHA del commit para trazabilidad.
         docker tag tienda-backend:latest ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
+        docker tag tienda-backend:latest ${{ secrets.ECR_REPO_URL_BACKEND }}:${{ github.sha }}
         docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:latest
+        docker push ${{ secrets.ECR_REPO_URL_BACKEND }}:${{ github.sha }}
 
     - name: Configurar Kubeconfig para EKS
       run: |

@@ -27,12 +27,14 @@ jobs:
     - name: Login en Amazon ECR (runner)
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build imagen DB y push a ECR
+    - name: Build imagen DB y push a ECR (con tag de versión = commit)
       run: |
         cd db
         docker build -t tienda-db .
         docker tag tienda-db:latest ${{ secrets.ECR_REPO_URL_DB }}:latest
+        docker tag tienda-db:latest ${{ secrets.ECR_REPO_URL_DB }}:${{ github.sha }}
         docker push ${{ secrets.ECR_REPO_URL_DB }}:latest
+        docker push ${{ secrets.ECR_REPO_URL_DB }}:${{ github.sha }}
 
     - name: Configurar Kubeconfig para EKS
       run: |
