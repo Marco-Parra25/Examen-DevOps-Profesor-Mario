@@ -18,7 +18,7 @@ spec:
       containers:
       - name: frontend
         # Tu imagen de Amazon ECR se mantiene intacta
-        image: 730335429934.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+        image: 081611519281.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
@@ -51,12 +51,9 @@ kind: Service
 metadata:
   name: frontend-service
   namespace: default
-  annotations:
-    # EKS Auto Mode utiliza esta anotación para provisionar automáticamente un Network Load Balancer (NLB) de AWS público
-    service.beta.kubernetes.io/aws-load-balancer-type: "external"
-    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
-    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
 spec:
+  # LoadBalancer estándar: AWS provisiona automáticamente un ELB público
+  # que expone el frontend a internet.
   type: LoadBalancer
   selector:
     app: frontend
